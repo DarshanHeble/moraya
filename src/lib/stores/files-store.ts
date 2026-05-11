@@ -113,6 +113,12 @@ function createFilesStore() {
         return { ...state, recentFiles: recent };
       });
     },
+    clearRecentFiles() {
+      update(state => {
+        persistFilesPrefs({ recentFiles: [] });
+        return { ...state, recentFiles: [] };
+      });
+    },
     clearFolder() {
       update(state => ({ ...state, openFolderPath: null, fileTree: [], filePreviews: [] }));
     },

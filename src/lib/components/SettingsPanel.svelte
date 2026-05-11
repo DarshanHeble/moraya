@@ -43,6 +43,7 @@
   let editorTabSize = $state(4);
   let showLineNumbers = $state(false);
   let showTitleBar = $state(true);
+  let syncWithOmarchy = $state(false);
 
   let knowledgeBases = $state<KnowledgeBase[]>([]);
   let showKBManager = $state(false);
@@ -74,6 +75,7 @@
     editorTabSize = state.editorTabSize;
     showLineNumbers = state.showLineNumbers;
     showTitleBar = state.showTitleBar;
+    syncWithOmarchy = state.syncWithOmarchy;
   });
   onDestroy(() => { unsub1(); unsub2(); });
 
@@ -136,6 +138,11 @@
   function handleTitleBarChange(event: Event) {
     const checked = (event.target as HTMLInputElement).checked;
     settingsStore.update({ showTitleBar: checked });
+  }
+
+  function handleOmarchySyncChange(event: Event) {
+    const checked = (event.target as HTMLInputElement).checked;
+    settingsStore.update({ syncWithOmarchy: checked });
   }
 
   function handleKeydown(event: KeyboardEvent) {
@@ -440,6 +447,18 @@
                   </select>
                 </div>
               {/if}
+
+              <div class="setting-group">
+                <label class="setting-label">
+                  <input
+                    type="checkbox"
+                    checked={syncWithOmarchy}
+                    onchange={handleOmarchySyncChange}
+                  />
+                  {$t('settings.appearance.syncWithOmarchy')}
+                </label>
+                <div class="setting-desc">{$t('settings.appearance.syncWithOmarchyDesc')}</div>
+              </div>
             </div>
 
             <!-- Dark mode subsection -->

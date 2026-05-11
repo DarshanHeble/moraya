@@ -998,6 +998,7 @@
   }
 </script>
 
+<!-- svelte-ignore a11y_no_static_element_interactions -->
 <div
   class="sidebar no-select"
   oncontextmenu={(e) => handleContextMenu(e, 'blank', folderPath || '', '')}
@@ -1141,14 +1142,29 @@
   <div class="sidebar-content" class:drop-root={dropTargetPath === folderPath && !!folderPath}>
     {#if recentFiles.length > 0 && !searchQuery}
       <div class="recent-section">
-        <button class="section-header" onclick={() => showRecent = !showRecent}>
+        <!-- svelte-ignore a11y_click_events_have_key_events -->
+        <!-- svelte-ignore a11y_no_static_element_interactions -->
+        <div class="section-header" onclick={() => showRecent = !showRecent}>
           <span class="tree-icon" class:expanded={showRecent}>
             <svg width="8" height="8" viewBox="0 0 8 8" fill="currentColor">
               <path d="M2 1l4 3-4 3z"/>
             </svg>
           </span>
           <span class="section-title">{$t('sidebar.recent')}</span>
-        </button>
+          <div class="spacer"></div>
+          {#if recentFiles.length > 0}
+            <button
+              class="clear-recent"
+              onclick={(e) => {
+                e.stopPropagation();
+                filesStore.clearRecentFiles();
+              }}
+              title={$t('sidebar.clearRecent')}
+            >
+              ×
+            </button>
+          {/if}
+        </div>
         {#if showRecent}
           <div class="recent-list">
             {#each recentFiles.slice(0, 5) as path}
@@ -1485,6 +1501,29 @@
   }
 
   .section-header:hover {
+    color: var(--text-primary);
+  }
+
+  .spacer {
+    flex: 1;
+  }
+
+  .clear-recent {
+    background: none;
+    border: none;
+    color: var(--text-muted);
+    font-size: 14px;
+    cursor: pointer;
+    padding: 2px 4px;
+    border-radius: 3px;
+    line-height: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .clear-recent:hover {
+    background: var(--bg-hover);
     color: var(--text-primary);
   }
 

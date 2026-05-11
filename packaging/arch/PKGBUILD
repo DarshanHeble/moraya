@@ -1,0 +1,42 @@
+# Maintainer: Darshan Heble <darshan@example.com>
+pkgname=moraya
+pkgver=0.40.0
+pkgrel=1
+pkgdesc="A modern, fast, and secure markdown editor optimized for Omarchy"
+arch=('x86_64')
+url="https://github.com/DarshanHeble/moraya"
+license=('Apache-2.0')
+depends=('webkit2gtk-4.1' 'gtk3' 'libappindicator-gtk3' 'librsvg' 'openssl' 'libcanberra' 'libnm')
+makedepends=('nodejs' 'pnpm' 'rust' 'cargo')
+source=("moraya::git+file://${PWD}")
+sha256sums=('SKIP')
+
+build() {
+  pnpm install
+  pnpm tauri build --bundle none
+}
+
+package() {
+  cd "${pkgname}-${pkgver}"
+  
+  # Binary
+  install -Dm755 "src-tauri/target/release/moraya" "${pkgdir}/usr/bin/moraya"
+  
+  # Desktop file
+  install -Dm644 "src-tauri/gen/apple/Moraya.desktop" "${pkgdir}/usr/share/applications/moraya.desktop" 2>/dev/null || \
+  install -Dm644 "src-tauri/resources/moraya.desktop" "${pkgdir}/usr/share/applications/moraya.desktop" 2>/dev/null || \
+  echo "[Desktop Entry]
+Name=Moraya
+Comment=Modern Markdown Editor
+Exec=moraya %U
+Icon=moraya
+Terminal=false
+Type=Application
+Categories=Office;TextEditor;
+MimeType=text/markdown;text/plain;" > "${pkgdir}/usr/share/applications/moraya.desktop"
+
+  # Icons
+  for size in 32 128; do
+    install -Dm644 "src-tauri/icons/${size}x${size}.png" "${pkgdir}/usr/share/icons/hicolor/${size}x${size}/apps/moraya.png"
+  done
+}

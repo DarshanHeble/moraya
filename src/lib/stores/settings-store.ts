@@ -82,6 +82,8 @@ interface Settings {
   picoraRewriteBase64: boolean;
   // v0.60.0: Toggle custom title bar visibility
   showTitleBar: boolean;
+  // v0.61.0: Sync theme with Omarchy
+  syncWithOmarchy: boolean;
 }
 
 const DEFAULT_SETTINGS: Settings = {
@@ -138,6 +140,7 @@ const DEFAULT_SETTINGS: Settings = {
   picoraTabSeen: false,
   picoraRewriteBase64: false,
   showTitleBar: true,
+  syncWithOmarchy: false,
 };
 
 function resolveLocale(selection: LocaleSelection): SupportedLocale {
@@ -163,6 +166,10 @@ function applyTheme(theme: Theme) {
 }
 
 function applyColorTheme(settings: Settings) {
+  if (settings.syncWithOmarchy) {
+    import('$lib/services/omarchy-service').then(m => m.syncWithOmarchyTheme());
+    return;
+  }
   const dark = isDarkMode(settings.theme);
   let themeId: string;
 
@@ -296,6 +303,13 @@ function createSettingsStore() {
         if ('showOutline' in partial) viewSync.showOutline = next.showOutline;
         if ('showTitleBar' in partial) viewSync.showTitleBar = next.showTitleBar;
         if (Object.keys(viewSync).length > 0) emitViewSync(viewSync);
+
+        // Apply appearance changes immediately
+        if ('syncWithOmarchy' in partial || 'colorTheme' in partial || 'darkColorTheme' in partial || 'theme' in partial || 'useSeparateDarkTheme' in partial) {
+          applyTheme(next.theme);
+          applyColorTheme(next);
+        }
+
         return next;
       });
     },

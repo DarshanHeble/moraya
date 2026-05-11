@@ -41,6 +41,7 @@ pub struct MainWindowReady(pub AtomicBool);
 pub struct PendingPicoraImport(pub Mutex<Option<serde_json::Value>>);
 
 /// Atomic counter for generating unique window labels.
+#[allow(dead_code)]
 static WINDOW_COUNTER: AtomicU32 = AtomicU32::new(0);
 
 /// Tracks which document is open in each window (used for macOS Dock menu).
@@ -156,11 +157,11 @@ fn get_opened_file(
 
 /// Create a new editor window, optionally for a specific file path.
 pub(crate) fn create_editor_window(
-    app: &tauri::AppHandle,
-    pending: &PendingFiles,
+    _app: &tauri::AppHandle,
+    _pending: &PendingFiles,
     path: Option<String>,
 ) -> Result<String, String> {
-    let title = path
+    let _title = path
         .as_ref()
         .and_then(|p| std::path::Path::new(p).file_name())
         .map(|n| n.to_string_lossy().into_owned())
@@ -304,11 +305,11 @@ fn get_all_window_bounds(app: tauri::AppHandle) -> Vec<(String, f64, f64, f64, f
 /// Create a new window at a specific position with pending tab data (for tab detach).
 #[tauri::command]
 fn detach_tab_to_window(
-    app: tauri::AppHandle,
-    pending_tab: tauri::State<'_, PendingTabData>,
+    _app: tauri::AppHandle,
+    _pending_tab: tauri::State<'_, PendingTabData>,
     tab_data: TabTransferData,
-    x: f64,
-    y: f64,
+    _x: f64,
+    _y: f64,
 ) -> Result<String, String> {
     #[cfg(target_os = "ios")]
     {
@@ -793,6 +794,7 @@ pub fn run() {
             close_window_by_label,
             set_window_visible,
             register_dock_document,
+            commands::omarchy::get_omarchy_colors,
         ])
         .setup(|app| {
             // Pre-warm OS keychain in background during app setup.

@@ -114,8 +114,9 @@
 
 <div class="kb-sync-settings">
   <div class="global-switch">
-    <label class="switch-label">
+    <label class="switch-label" for="kb-sync-global">
       <input
+        id="kb-sync-global"
         type="checkbox"
         checked={kbSyncEnabled}
         onchange={(e) => settingsStore.update({ kbSyncEnabled: (e.target as HTMLInputElement).checked })}
@@ -180,8 +181,9 @@
           {@const binding = kb.picoraBinding}
           <div class="strategy-editor">
             <div class="strategy-row">
-              <label class="strategy-label">{$t('kbSync.strategy.mode')}</label>
+              <label class="strategy-label" for="kb-sync-mode-{kb.id}">{$t('kbSync.strategy.mode')}</label>
               <select
+                id="kb-sync-mode-{kb.id}"
                 class="select-input"
                 value={binding.strategy.mode}
                 onchange={(e) => filesStore.updateKbStrategy(kb.id, { ...binding.strategy, mode: (e.target as HTMLSelectElement).value as SyncStrategy['mode'] })}
@@ -205,8 +207,9 @@
               {/if}
             </div>
             <div class="strategy-row">
-              <label class="strategy-label">{$t('kbSync.strategy.scope')}</label>
+              <label class="strategy-label" for="kb-sync-scope-{kb.id}">{$t('kbSync.strategy.scope')}</label>
               <select
+                id="kb-sync-scope-{kb.id}"
                 class="select-input"
                 value={binding.strategy.scope}
                 onchange={(e) => filesStore.updateKbStrategy(kb.id, { ...binding.strategy, scope: (e.target as HTMLSelectElement).value as SyncStrategy['scope'] })}
@@ -217,8 +220,9 @@
               </select>
             </div>
             <div class="strategy-row">
-              <label class="strategy-label">{$t('kbSync.strategy.conflict')}</label>
+              <label class="strategy-label" for="kb-sync-conflict-{kb.id}">{$t('kbSync.strategy.conflict')}</label>
               <select
+                id="kb-sync-conflict-{kb.id}"
                 class="select-input"
                 value={binding.strategy.conflictPolicy}
                 onchange={(e) => filesStore.updateKbStrategy(kb.id, { ...binding.strategy, conflictPolicy: (e.target as HTMLSelectElement).value as SyncStrategy['conflictPolicy'] })}

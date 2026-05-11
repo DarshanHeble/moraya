@@ -1,0 +1,47 @@
+#!/bin/bash
+
+# omarchy:summary=Install Moraya Markdown Editor and configure Omarchy defaults
+
+echo "Installing Moraya..."
+
+# If we were on AUR, we'd use:
+# omarchy-pkg-add moraya-bin
+# Since it's local, we can build from the current directory if we are in it, 
+# or download a pre-built binary if available.
+
+# For this demo, let's assume we are installing a local build or 
+# directing the user to the local PKGBUILD.
+
+if [ -f "./packaging/arch/PKGBUILD" ]; then
+    echo "Found local PKGBUILD. Building and installing..."
+    cd packaging/arch && makepkg -si --noconfirm
+else
+    echo "Moraya is not yet in the official repositories."
+    echo "Please visit https://github.com/DarshanHeble/moraya to download the latest release."
+fi
+
+# Configure Moraya defaults for Omarchy
+echo "Configuring Omarchy defaults for Moraya..."
+
+# Ensure the settings directory exists
+mkdir -p ~/.config/com.moraya.app
+
+# Set Omarchy theme sync to true by default on Omarchy
+# We'll use a small python snippet to patch the JSON if it exists
+python3 -c '
+import json, os
+path = os.path.expanduser("~/.config/com.moraya.app/settings.json")
+if os.path.exists(path):
+    with open(path, "r") as f:
+        try:
+            data = json.load(f)
+            data["data"]["syncWithOmarchy"] = True
+            data["data"]["showTitleBar"] = False
+            with open(path, "w") as f_out:
+                json.dump(data, f_out, indent=2)
+        except:
+            pass
+'
+
+echo "Moraya installed and configured for Omarchy!"
+echo "You can now launch it via Super+Space -> Moraya"

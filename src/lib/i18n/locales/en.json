@@ -63,6 +63,8 @@
       "fontSection": "Font",
       "separateDarkTheme": "Use separate theme for dark mode",
       "darkTheme": "Dark Mode Theme",
+      "syncWithOmarchy": "Sync with Omarchy Theme",
+      "syncWithOmarchyDesc": "Automatically match the color palette of your Omarchy desktop environment.",
       "darkModeLabel": "Appearance",
       "showTitleBar": "Show Title Bar"
     },
@@ -248,6 +250,7 @@
     "listView": "List View",
     "search": "Search files...",
     "recent": "Recent",
+    "clearRecent": "Clear Recent Files",
     "contextMenu": {
       "newFile": "New File",
       "newFolder": "New Folder",
