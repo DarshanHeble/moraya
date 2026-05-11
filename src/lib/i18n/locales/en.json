@@ -63,7 +63,8 @@
       "fontSection": "Font",
       "separateDarkTheme": "Use separate theme for dark mode",
       "darkTheme": "Dark Mode Theme",
-      "darkModeLabel": "Appearance"
+      "darkModeLabel": "Appearance",
+      "showTitleBar": "Show Title Bar"
     },
     "fontSize": {
       "label": "Font Size"
@@ -246,6 +247,7 @@
     "treeView": "Tree View",
     "listView": "List View",
     "search": "Search files...",
+    "recent": "Recent",
     "contextMenu": {
       "newFile": "New File",
       "newFolder": "New Folder",
@@ -1766,7 +1768,8 @@
     "commands": "Commands",
     "semanticSearch": "Semantic Search",
     "keywordSearch": "Keyword Search",
-    "noResults": "No results found"
+    "noResults": "No results found",
+    "recentFiles": "Recent Files"
   },
   "git": {
     "bindTitle": "Link Git Repository",

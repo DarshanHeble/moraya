@@ -80,6 +80,8 @@ interface Settings {
   picoraTabSeen: boolean;
   // v0.37.0: Auto-rewrite base64 images in documents to Picora CDN on upload
   picoraRewriteBase64: boolean;
+  // v0.60.0: Toggle custom title bar visibility
+  showTitleBar: boolean;
 }
 
 const DEFAULT_SETTINGS: Settings = {
@@ -135,6 +137,7 @@ const DEFAULT_SETTINGS: Settings = {
   picoraDebugLogging: false,
   picoraTabSeen: false,
   picoraRewriteBase64: false,
+  showTitleBar: true,
 };
 
 function resolveLocale(selection: LocaleSelection): SupportedLocale {
@@ -197,7 +200,7 @@ function emitViewSync(partial: Record<string, unknown>) {
   if (!windowLabel) {
     try { windowLabel = getCurrentWindow().label; } catch { windowLabel = 'main'; }
   }
-  emit(VIEW_SYNC_EVENT, { source: windowLabel, ...partial }).catch(() => {});
+  emit(VIEW_SYNC_EVENT, { source: windowLabel, ...partial }).catch(() => { });
 }
 
 /** Debounced persist to avoid excessive disk writes */
@@ -291,6 +294,7 @@ function createSettingsStore() {
         const viewSync: Record<string, unknown> = {};
         if ('showSidebar' in partial) viewSync.showSidebar = next.showSidebar;
         if ('showOutline' in partial) viewSync.showOutline = next.showOutline;
+        if ('showTitleBar' in partial) viewSync.showTitleBar = next.showTitleBar;
         if (Object.keys(viewSync).length > 0) emitViewSync(viewSync);
         return next;
       });
@@ -505,14 +509,15 @@ export async function initSettingsStore() {
   if (!windowLabel) {
     try { windowLabel = getCurrentWindow().label; } catch { windowLabel = 'main'; }
   }
-  listen<{ source: string; showSidebar?: boolean; showOutline?: boolean }>(VIEW_SYNC_EVENT, (event) => {
+  listen<{ source: string; showSidebar?: boolean; showOutline?: boolean; showTitleBar?: boolean }>(VIEW_SYNC_EVENT, (event) => {
     if (event.payload.source === windowLabel) return; // Ignore own events
     const partial: Partial<Settings> = {};
     if ('showSidebar' in event.payload) partial.showSidebar = event.payload.showSidebar;
     if ('showOutline' in event.payload) partial.showOutline = event.payload.showOutline;
+    if ('showTitleBar' in event.payload) partial.showTitleBar = event.payload.showTitleBar;
     if (Object.keys(partial).length === 0) return;
     syncGuard = true;
     settingsStore.update(partial);
     syncGuard = false;
-  }).catch(() => {});
+  }).catch(() => { });
 }

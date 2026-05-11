@@ -208,7 +208,8 @@ pub(crate) fn create_editor_window(
         .title(&title)
         .inner_size(1200.0, 800.0)
         .min_inner_size(600.0, 400.0)
-        .decorations(true);
+        .decorations(true)
+        .visible(false);
 
         if let Some((x, y)) = cascade_pos {
             builder = builder.position(x, y);
@@ -362,6 +363,7 @@ fn detach_tab_to_window(
         .inner_size(1200.0, 800.0)
         .min_inner_size(600.0, 400.0)
         .decorations(true)
+        .visible(false)
         .position(x, y);
 
         use tauri::TitleBarStyle;
@@ -912,9 +914,9 @@ pub fn run() {
             }
 
             // Window starts hidden (visible:false in tauri.conf.json) to avoid
-            // a position flash on Windows/Linux where fit_window_to_screen may
-            // reposition/resize the window. Show it now that setup is complete.
-            let _ = window.show();
+            // a position flash on Windows/Linux. The frontend will call show()
+            // once it has initialized decorations and layout.
+            // let _ = window.show();
             Ok(())
         })
         .build(tauri::generate_context!())

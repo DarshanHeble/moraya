@@ -56,11 +56,12 @@ interface FilesState {
 const FILES_STORE_FILE = 'files-prefs.json';
 const KB_STORE_FILE = 'knowledge-bases.json';
 
-/** Persist sidebar view mode to disk immediately (no debounce — toggles are infrequent). */
-function persistViewMode(mode: SidebarViewMode) {
+/** Persist sidebar view mode and recent files to disk. */
+function persistFilesPrefs(patch: { sidebarViewMode?: SidebarViewMode; recentFiles?: string[] }) {
   load(FILES_STORE_FILE)
     .then(async (store) => {
-      await store.set('sidebarViewMode', mode);
+      if (patch.sidebarViewMode) await store.set('sidebarViewMode', patch.sidebarViewMode);
+      if (patch.recentFiles) await store.set('recentFiles', patch.recentFiles);
       await store.save();
     })
     .catch(() => { /* ignore persist errors */ });
@@ -103,11 +104,12 @@ function createFilesStore() {
     },
     setSidebarViewMode(mode: SidebarViewMode) {
       update(state => ({ ...state, sidebarViewMode: mode }));
-      persistViewMode(mode);
+      persistFilesPrefs({ sidebarViewMode: mode });
     },
     addRecentFile(path: string) {
       update(state => {
         const recent = [path, ...state.recentFiles.filter(f => f !== path)].slice(0, 20);
+        persistFilesPrefs({ recentFiles: recent });
         return { ...state, recentFiles: recent };
       });
     },
@@ -299,9 +301,14 @@ function createFilesStore() {
       try {
         const store = await load(FILES_STORE_FILE);
         const mode = await store.get<SidebarViewMode>('sidebarViewMode');
-        if (mode === 'tree' || mode === 'list') {
-          update(state => ({ ...state, sidebarViewMode: mode }));
-        }
+        const recent = await store.get<string[]>('recentFiles');
+
+        update(state => {
+          const newState = { ...state };
+          if (mode === 'tree' || mode === 'list') newState.sidebarViewMode = mode;
+          if (Array.isArray(recent)) newState.recentFiles = recent;
+          return newState;
+        });
       } catch { /* first launch — no persisted prefs */ }
 
       // Load knowledge bases

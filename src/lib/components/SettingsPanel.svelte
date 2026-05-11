@@ -42,6 +42,7 @@
   let editorLineWidth = $state(800);
   let editorTabSize = $state(4);
   let showLineNumbers = $state(false);
+  let showTitleBar = $state(true);
 
   let knowledgeBases = $state<KnowledgeBase[]>([]);
   let showKBManager = $state(false);
@@ -72,6 +73,7 @@
     editorLineWidth = state.editorLineWidth;
     editorTabSize = state.editorTabSize;
     showLineNumbers = state.showLineNumbers;
+    showTitleBar = state.showTitleBar;
   });
   onDestroy(() => { unsub1(); unsub2(); });
 
@@ -129,6 +131,11 @@
   function handleLineNumbersChange(event: Event) {
     const checked = (event.target as HTMLInputElement).checked;
     settingsStore.update({ showLineNumbers: checked });
+  }
+
+  function handleTitleBarChange(event: Event) {
+    const checked = (event.target as HTMLInputElement).checked;
+    settingsStore.update({ showTitleBar: checked });
   }
 
   function handleKeydown(event: KeyboardEvent) {
@@ -467,6 +474,21 @@
                   />
                   <span class="setting-value">{fontSize}px</span>
                 </div>
+              </div>
+            </div>
+
+            <!-- Title Bar subsection -->
+            <div class="setting-subsection">
+              <div class="subsection-label">{$t('settings.tabs.general')}</div>
+              <div class="setting-group">
+                <label class="setting-label">
+                  <input
+                    type="checkbox"
+                    checked={showTitleBar}
+                    onchange={handleTitleBarChange}
+                  />
+                  {$t('settings.appearance.showTitleBar')}
+                </label>
               </div>
             </div>
           </div>

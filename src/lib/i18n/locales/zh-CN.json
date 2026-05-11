@@ -63,7 +63,8 @@
       "fontSection": "字体",
       "separateDarkTheme": "在深色模式下使用独立的主题",
       "darkTheme": "深色模式主题",
-      "darkModeLabel": "外观模式"
+      "darkModeLabel": "外观模式",
+      "showTitleBar": "显示标题栏"
     },
     "fontSize": {
       "label": "字体大小"

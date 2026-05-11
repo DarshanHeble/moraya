@@ -19,6 +19,7 @@
     "core:window:allow-set-position",
     "core:window:allow-show",
     "core:window:allow-hide",
+    "core:window:allow-set-decorations",
     "fs:default",
     "fs:allow-read-file",
     "fs:allow-write-file",

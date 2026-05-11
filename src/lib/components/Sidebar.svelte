@@ -44,6 +44,8 @@
   let searchQuery = $state('');
   let showSearch = $state(false);
   let searchInputEl = $state<HTMLInputElement | null>(null);
+  let showRecent = $state(true);
+  let recentFiles = $state<string[]>([]);
 
   // Drag-and-drop state (pointer-event based, bypasses HTML5 DnD for WKWebView reliability)
   let _dragPath: string | null = null;   // plain var — always synchronously readable in handlers
@@ -114,6 +116,7 @@
       knowledgeBases = state.knowledgeBases;
     }
     activeKBId = state.activeKnowledgeBaseId;
+    recentFiles = state.recentFiles;
   });
   // Per-KB sync state map (drives dropdown badge + sync-button spinner state).
   let syncStates = $state<Map<string, KbSyncState>>(new Map());
@@ -1136,6 +1139,35 @@
   />
 
   <div class="sidebar-content" class:drop-root={dropTargetPath === folderPath && !!folderPath}>
+    {#if recentFiles.length > 0 && !searchQuery}
+      <div class="recent-section">
+        <button class="section-header" onclick={() => showRecent = !showRecent}>
+          <span class="tree-icon" class:expanded={showRecent}>
+            <svg width="8" height="8" viewBox="0 0 8 8" fill="currentColor">
+              <path d="M2 1l4 3-4 3z"/>
+            </svg>
+          </span>
+          <span class="section-title">{$t('sidebar.recent')}</span>
+        </button>
+        {#if showRecent}
+          <div class="recent-list">
+            {#each recentFiles.slice(0, 5) as path}
+              <button
+                class="recent-item"
+                onclick={() => onFileSelect(path)}
+                title={path}
+              >
+                <span class="recent-icon">
+                  <svg width="12" height="12" viewBox="0 0 12 12" fill="currentColor" opacity="0.5"><path d="M2 1h5l3 3v7H2V1zm5 0v3h3"/></svg>
+                </span>
+                <span class="recent-name">{path.split('/').pop()?.replace(/\.md$/, '')}</span>
+              </button>
+            {/each}
+          </div>
+        {/if}
+      </div>
+    {/if}
+
     {#if knowledgeBases.length === 0}
       <!-- No knowledge bases created yet — prompt user to add one -->
       <div class="sidebar-empty">
@@ -1428,6 +1460,72 @@
     align-items: center;
     gap: 0.125rem;
     flex-shrink: 0;
+  }
+
+  .recent-section {
+    margin-bottom: 0.5rem;
+    border-bottom: 1px solid var(--border-light);
+    padding-bottom: 0.25rem;
+  }
+
+  .section-header {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+    width: 100%;
+    padding: 0.25rem 0.75rem;
+    border: none;
+    background: transparent;
+    color: var(--text-muted);
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    cursor: pointer;
+    font-weight: 600;
+  }
+
+  .section-header:hover {
+    color: var(--text-primary);
+  }
+
+  .recent-list {
+    display: flex;
+    flex-direction: column;
+    padding: 0.125rem 0;
+  }
+
+  .recent-item {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.25rem 1rem;
+    border: none;
+    background: transparent;
+    color: var(--text-secondary);
+    font-size: var(--font-size-xs);
+    cursor: pointer;
+    text-align: left;
+    width: 100%;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .recent-item:hover {
+    background: var(--bg-hover);
+    color: var(--text-primary);
+  }
+
+  .recent-icon {
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+  }
+
+  .recent-name {
+    flex: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
 
   .sidebar-btn {

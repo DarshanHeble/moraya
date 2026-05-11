@@ -71,7 +71,25 @@
 
   // Fuzzy file matching
   let fileResults = $derived.by(() => {
-    if (mode !== 'files' || !searchQuery) return flatFiles.slice(0, 30);
+    if (mode !== 'files') return [];
+    if (!searchQuery) {
+      const recentPaths = filesStore.getState().recentFiles;
+      const recentItems: FileItem[] = [];
+      const seenPaths = new Set<string>();
+
+      // First, add files from recentFiles that exist in flatFiles
+      for (const path of recentPaths) {
+        const found = flatFiles.find((f) => f.path === path);
+        if (found) {
+          recentItems.push(found);
+          seenPaths.add(path);
+        }
+      }
+
+      // Then fill remaining space with other flatFiles
+      const otherFiles = flatFiles.filter((f) => !seenPaths.has(f.path));
+      return [...recentItems, ...otherFiles].slice(0, 30);
+    }
     const q = searchQuery.toLowerCase();
     return flatFiles
       .filter((f) => f.name.toLowerCase().includes(q) || f.path.toLowerCase().includes(q))

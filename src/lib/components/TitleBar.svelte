@@ -1,26 +1,41 @@
 <script lang="ts">
-  import { onDestroy } from 'svelte';
-  import { editorStore } from '../stores/editor-store';
-  import type { TabItem } from '../stores/tabs-store';
-  import { t } from '$lib/i18n';
-  import { isTauri, isMacOS } from '$lib/utils/platform';
-  import { getCurrentWindow, LogicalPosition, type Window as TauriWindow } from '@tauri-apps/api/window';
-  import { invoke } from '@tauri-apps/api/core';
-  import { emitTo } from '@tauri-apps/api/event';
+  import { onDestroy } from "svelte";
+  import { editorStore } from "../stores/editor-store";
+  import type { TabItem } from "../stores/tabs-store";
+  import { t } from "$lib/i18n";
+  import { isTauri, isMacOS } from "$lib/utils/platform";
+  import {
+    getCurrentWindow,
+    LogicalPosition,
+    type Window as TauriWindow,
+  } from "@tauri-apps/api/window";
+  import { invoke } from "@tauri-apps/api/core";
+  import { emitTo } from "@tauri-apps/api/event";
 
   let {
-    title = 'Moraya',
+    title = "Moraya",
     tabs = [] as TabItem[],
-    activeTabId = '',
+    activeTabId = "",
     externalDropIndex = -1,
     onSwitchTab = (_id: string) => {},
     onCloseTab = (_tab: TabItem) => {},
     onNewFile = () => {},
     onOpenFile = () => {},
     onReorderTabs = (_from: number, _to: number) => {},
-    onDetachStart = (_tabIndex: number, _screenX: number, _screenY: number, _offsetX: number, _offsetY: number): Promise<string | undefined> => Promise.resolve(undefined),
-    onDetachEnd = (_tabIndex: number, _detachedLabel: string | null, _reattachTarget: string | null): Promise<void> => Promise.resolve(),
-    onAttachTab = (_tabIndex: number, _targetLabel: string): Promise<void> => Promise.resolve(),
+    onDetachStart = (
+      _tabIndex: number,
+      _screenX: number,
+      _screenY: number,
+      _offsetX: number,
+      _offsetY: number,
+    ): Promise<string | undefined> => Promise.resolve(undefined),
+    onDetachEnd = (
+      _tabIndex: number,
+      _detachedLabel: string | null,
+      _reattachTarget: string | null,
+    ): Promise<void> => Promise.resolve(),
+    onAttachTab = (_tabIndex: number, _targetLabel: string): Promise<void> =>
+      Promise.resolve(),
   }: {
     title?: string;
     tabs?: TabItem[];
@@ -31,8 +46,18 @@
     onNewFile?: () => void;
     onOpenFile?: () => void;
     onReorderTabs?: (fromIndex: number, toIndex: number) => void;
-    onDetachStart?: (tabIndex: number, screenX: number, screenY: number, offsetX: number, offsetY: number) => Promise<string | undefined>;
-    onDetachEnd?: (tabIndex: number, detachedLabel: string | null, reattachTarget: string | null) => Promise<void>;
+    onDetachStart?: (
+      tabIndex: number,
+      screenX: number,
+      screenY: number,
+      offsetX: number,
+      offsetY: number,
+    ) => Promise<string | undefined>;
+    onDetachEnd?: (
+      tabIndex: number,
+      detachedLabel: string | null,
+      reattachTarget: string | null,
+    ) => Promise<void>;
     onAttachTab?: (tabIndex: number, targetLabel: string) => Promise<void>;
   } = $props();
 
@@ -63,8 +88,8 @@
   // Use explicit startDragging() on mousedown for reliable window dragging.
   function handleDragStart(event: MouseEvent) {
     if (event.button !== 0) return; // Only left mouse button
-    if ((event.target as HTMLElement).closest('button')) return;
-    if ((event.target as HTMLElement).closest('.tab-item')) return;
+    if ((event.target as HTMLElement).closest("button")) return;
+    if ((event.target as HTMLElement).closest(".tab-item")) return;
     // Skip drag on double-click (detail >= 2): macOS startDragging() handles
     // double-click-to-maximize natively, and our ondblclick handler also calls
     // toggleMaximize — triggering both would double-toggle (maximize then restore).
@@ -73,8 +98,8 @@
   }
 
   function handleDblClick(event: MouseEvent) {
-    if ((event.target as HTMLElement).closest('button')) return;
-    if ((event.target as HTMLElement).closest('.tab-item')) return;
+    if ((event.target as HTMLElement).closest("button")) return;
+    if ((event.target as HTMLElement).closest(".tab-item")) return;
     // On macOS, startDragging() already handles double-click-to-maximize natively.
     // Only call toggleMaximize on non-macOS platforms.
     if (!isMacOS) {
@@ -84,12 +109,16 @@
 
   // Track dirty state from store — top-level subscribe, do NOT wrap in $effect().
   let isDirty = $state(false);
-  const unsubEditor = editorStore.subscribe(state => {
+  const unsubEditor = editorStore.subscribe((state) => {
     isDirty = state.isDirty;
   });
-  onDestroy(() => { unsubEditor(); });
+  onDestroy(() => {
+    unsubEditor();
+  });
 
-  let displayTitle = $derived(isDirty ? `${title} - ${$t('titlebar.unsaved')}` : title);
+  let displayTitle = $derived(
+    isDirty ? `${title} - ${$t("titlebar.unsaved")}` : title,
+  );
 
   // Whether to show inline tabs (macOS only, when tabs exist)
   let showInlineTabs = $derived(isMacOS && tabs.length > 0);
@@ -121,7 +150,7 @@
   function handleTabPointerDown(event: PointerEvent, index: number) {
     if (event.button !== 0) return;
     // Don't start drag on close button
-    if ((event.target as HTMLElement).closest('.tab-close')) return;
+    if ((event.target as HTMLElement).closest(".tab-close")) return;
     dragStartX = event.clientX;
     isDragging = false;
     isDetaching = false;
@@ -134,7 +163,7 @@
     const pointerId = event.pointerId;
     const el = event.currentTarget as HTMLElement;
     el.setPointerCapture(pointerId);
-    const myLabel = appWindow?.label ?? '';
+    const myLabel = appWindow?.label ?? "";
 
     // Record tab width for detach offset calculation
     const tabRect = el.getBoundingClientRect();
@@ -143,8 +172,12 @@
     // Pre-fetch window bounds immediately on pointer down (before any movement).
     // This gives the IPC ~200ms more time to complete vs fetching on first 5px move.
     if (isTauri) {
-      invoke<[string, number, number, number, number, number][]>('get_all_window_bounds')
-        .then(bounds => { cachedBounds = bounds; })
+      invoke<[string, number, number, number, number, number][]>(
+        "get_all_window_bounds",
+      )
+        .then((bounds) => {
+          cachedBounds = bounds;
+        })
         .catch(() => {});
     }
 
@@ -152,19 +185,28 @@
       if (!isDragging && Math.abs(e.clientX - dragStartX) > 5) {
         isDragging = true;
         dragTabIndex = index;
-        document.body.style.cursor = 'grabbing';
+        document.body.style.cursor = "grabbing";
         // Cache all window bounds + calculate drag offset for single-tab window move
         if (isTauri) {
-          invoke<[string, number, number, number, number, number][]>('get_all_window_bounds')
-            .then(bounds => { cachedBounds = bounds; })
-            .catch(() => { cachedBounds = []; });
-          appWindow?.outerPosition().then(pos => {
-            // GUARD: don't overwrite detach offset if detach already triggered
-            if (detachTriggered) return;
-            const scale = window.devicePixelRatio || 1;
-            dragOffsetX = e.screenX - pos.x / scale;
-            dragOffsetY = e.screenY - pos.y / scale;
-          }).catch(() => {});
+          invoke<[string, number, number, number, number, number][]>(
+            "get_all_window_bounds",
+          )
+            .then((bounds) => {
+              cachedBounds = bounds;
+            })
+            .catch(() => {
+              cachedBounds = [];
+            });
+          appWindow
+            ?.outerPosition()
+            .then((pos) => {
+              // GUARD: don't overwrite detach offset if detach already triggered
+              if (detachTriggered) return;
+              const scale = window.devicePixelRatio || 1;
+              dragOffsetX = e.screenX - pos.x / scale;
+              dragOffsetY = e.screenY - pos.y / scale;
+            })
+            .catch(() => {});
         }
       }
       if (!isDragging) return;
@@ -182,10 +224,11 @@
       const tabBarRect = macScrollEl?.getBoundingClientRect();
       if (tabBarRect) {
         const detachMargin = 40;
-        const leftTabBar = e.clientY < tabBarRect.top - detachMargin ||
-                           e.clientY > tabBarRect.bottom + detachMargin ||
-                           e.clientX < tabBarRect.left - detachMargin ||
-                           e.clientX > tabBarRect.right + detachMargin;
+        const leftTabBar =
+          e.clientY < tabBarRect.top - detachMargin ||
+          e.clientY > tabBarRect.bottom + detachMargin ||
+          e.clientX < tabBarRect.left - detachMargin ||
+          e.clientX > tabBarRect.right + detachMargin;
 
         if (leftTabBar) {
           // Check if pointer is over another window's tab bar (attach)
@@ -197,8 +240,12 @@
               if (label === myLabel) continue;
               // Tab bar starts at wy + clientYOff (below native title bar on Windows/Linux)
               const tabTop = wy + clientYOff;
-              if (e.screenX >= wx && e.screenX <= wx + ww &&
-                  e.screenY >= tabTop && e.screenY <= tabTop + DETECT_H) {
+              if (
+                e.screenX >= wx &&
+                e.screenX <= wx + ww &&
+                e.screenY >= tabTop &&
+                e.screenY <= tabTop + DETECT_H
+              ) {
                 overTarget = label;
                 break;
               }
@@ -208,13 +255,18 @@
               crossWindowTarget = overTarget;
               isDetaching = false;
               dropTargetIndex = null;
-              emitTo(overTarget, 'tab-drag-hover', { screenX: e.screenX }).catch(() => {});
+              emitTo(overTarget, "tab-drag-hover", {
+                screenX: e.screenX,
+              }).catch(() => {});
               // Single-tab: make window invisible when hovering over target tab bar (Chrome-style).
               // Uses NSWindow.setAlphaValue(0) on macOS — moving off-screen doesn't work
               // because macOS constrains the active/key window to stay partially on-screen.
               if (tabs.length <= 1 && appWindow && !singleTabHidden) {
                 singleTabHidden = true;
-                invoke('set_window_alpha', { label: appWindow.label, alpha: 0 }).catch(() => {});
+                invoke("set_window_alpha", {
+                  label: appWindow.label,
+                  alpha: 0,
+                }).catch(() => {});
               }
               return;
             }
@@ -230,38 +282,64 @@
             // New window inherits sidebar state from settings. Read the actual
             // padding-left of .titlebar-center which is max(78px, sidebarWidth).
             // This gives the exact X where tabs start in the new window.
-            const centerEl = document.querySelector('.titlebar-center');
+            const centerEl = document.querySelector(".titlebar-center");
             const tabBarStart = centerEl
-              ? parseFloat(getComputedStyle(centerEl).paddingLeft) || (isMacOS ? 78 : 0)
-              : (isMacOS ? 78 : 0);
+              ? parseFloat(getComputedStyle(centerEl).paddingLeft) ||
+                (isMacOS ? 78 : 0)
+              : isMacOS
+                ? 78
+                : 0;
             dragOffsetX = tabBarStart + dragTabWidth / 2;
             dragOffsetY = isMacOS ? 14 : 50;
             // Re-fetch bounds if not available yet (async race at drag start)
             if (cachedBounds.length === 0 && isTauri) {
-              invoke<[string, number, number, number, number, number][]>('get_all_window_bounds')
-                .then(bounds => { cachedBounds = bounds; }).catch(() => {});
+              invoke<[string, number, number, number, number, number][]>(
+                "get_all_window_bounds",
+              )
+                .then((bounds) => {
+                  cachedBounds = bounds;
+                })
+                .catch(() => {});
             }
-            detachPromise = onDetachStart(index, e.screenX, e.screenY, dragOffsetX, dragOffsetY);
-            detachPromise.then(label => {
+            detachPromise = onDetachStart(
+              index,
+              e.screenX,
+              e.screenY,
+              dragOffsetX,
+              dragOffsetY,
+            );
+            detachPromise.then((label) => {
               detachedWindowLabel = label ?? null;
               // Refresh bounds now that we know the detached window label.
               // This ensures subsequent detection can correctly skip the new window.
               if (isTauri) {
-                invoke<[string, number, number, number, number, number][]>('get_all_window_bounds')
-                  .then(bounds => { cachedBounds = bounds; }).catch(() => {});
+                invoke<[string, number, number, number, number, number][]>(
+                  "get_all_window_bounds",
+                )
+                  .then((bounds) => {
+                    cachedBounds = bounds;
+                  })
+                  .catch(() => {});
               }
             });
           } else {
             // Single-tab: move current window with cursor (also restores from invisible)
             if (singleTabHidden && appWindow) {
               singleTabHidden = false;
-              invoke('set_window_alpha', { label: appWindow.label, alpha: 1 }).catch(() => {});
+              invoke("set_window_alpha", {
+                label: appWindow.label,
+                alpha: 1,
+              }).catch(() => {});
             }
             if (appWindow) {
-              appWindow.setPosition(new LogicalPosition(
-                e.screenX - dragOffsetX,
-                e.screenY - dragOffsetY,
-              )).catch(() => {});
+              appWindow
+                .setPosition(
+                  new LogicalPosition(
+                    e.screenX - dragOffsetX,
+                    e.screenY - dragOffsetY,
+                  ),
+                )
+                .catch(() => {});
             }
           }
           return;
@@ -273,11 +351,13 @@
       // Safety: restore single-tab window if cursor returned inside source tab bar
       if (singleTabHidden && appWindow) {
         singleTabHidden = false;
-        invoke('set_window_alpha', { label: appWindow.label, alpha: 1 }).catch(() => {});
+        invoke("set_window_alpha", { label: appWindow.label, alpha: 1 }).catch(
+          () => {},
+        );
       }
 
       // Normal intra-window reorder
-      const tabEls = macScrollEl?.querySelectorAll('.tab-item');
+      const tabEls = macScrollEl?.querySelectorAll(".tab-item");
       if (!tabEls) return;
       let target: number | null = null;
       for (let i = 0; i < tabEls.length; i++) {
@@ -302,9 +382,16 @@
       // Guard with boundsFetching to prevent rapid-fire IPC on every pointermove.
       if (cachedBounds.length === 0 && isTauri && !boundsFetching) {
         boundsFetching = true;
-        invoke<[string, number, number, number, number, number][]>('get_all_window_bounds')
-          .then(bounds => { cachedBounds = bounds; boundsFetching = false; })
-          .catch(() => { boundsFetching = false; });
+        invoke<[string, number, number, number, number, number][]>(
+          "get_all_window_bounds",
+        )
+          .then((bounds) => {
+            cachedBounds = bounds;
+            boundsFetching = false;
+          })
+          .catch(() => {
+            boundsFetching = false;
+          });
       }
 
       const DETECT_H = isMacOS ? 84 : 108;
@@ -319,16 +406,24 @@
           const tabTop = wy + clientYOff;
 
           // "Entry" zone: full window width × DETECT_H from tab top
-          if (!overTarget &&
-              e.screenX >= wx && e.screenX <= wx + ww &&
-              e.screenY >= tabTop && e.screenY <= tabTop + DETECT_H) {
+          if (
+            !overTarget &&
+            e.screenX >= wx &&
+            e.screenX <= wx + ww &&
+            e.screenY >= tabTop &&
+            e.screenY <= tabTop + DETECT_H
+          ) {
             overTarget = label;
             nearAnyTarget = true;
           }
           // "Near" zone: expanded by EXIT_MARGIN on all sides (for hysteresis)
-          if (!nearAnyTarget &&
-              e.screenX >= wx - EXIT_MARGIN && e.screenX <= wx + ww + EXIT_MARGIN &&
-              e.screenY >= tabTop - EXIT_MARGIN && e.screenY <= tabTop + DETECT_H + EXIT_MARGIN) {
+          if (
+            !nearAnyTarget &&
+            e.screenX >= wx - EXIT_MARGIN &&
+            e.screenX <= wx + ww + EXIT_MARGIN &&
+            e.screenY >= tabTop - EXIT_MARGIN &&
+            e.screenY <= tabTop + DETECT_H + EXIT_MARGIN
+          ) {
             nearAnyTarget = true;
           }
         }
@@ -336,35 +431,54 @@
 
       // Hysteresis: if hidden and cursor is still near a target (but not directly over),
       // keep the window hidden and maintain the previous target for merging.
-      if (!overTarget && detachedWindowHidden && nearAnyTarget && crossWindowTarget) {
-        emitTo(crossWindowTarget, 'tab-drag-hover', { screenX: e.screenX }).catch(() => {});
+      if (
+        !overTarget &&
+        detachedWindowHidden &&
+        nearAnyTarget &&
+        crossWindowTarget
+      ) {
+        emitTo(crossWindowTarget, "tab-drag-hover", {
+          screenX: e.screenX,
+        }).catch(() => {});
         return;
       }
 
       // Update cross-window target state and emit hover events
       if (overTarget !== crossWindowTarget) {
-        if (crossWindowTarget) emitTo(crossWindowTarget, 'tab-drag-end', {}).catch(() => {});
+        if (crossWindowTarget)
+          emitTo(crossWindowTarget, "tab-drag-end", {}).catch(() => {});
         crossWindowTarget = overTarget;
       }
 
       if (overTarget) {
-        emitTo(overTarget, 'tab-drag-hover', { screenX: e.screenX }).catch(() => {});
+        emitTo(overTarget, "tab-drag-hover", { screenX: e.screenX }).catch(
+          () => {},
+        );
         // "Hide" the detached window by moving it off-screen.
         // Using move_window instead of set_window_visible eliminates IPC race
         // conditions between separate hide/show/move commands — all visibility
         // changes now go through a single command type.
         if (detachedWindowLabel && !detachedWindowHidden) {
           detachedWindowHidden = true;
-          if (moveRafId) { cancelAnimationFrame(moveRafId); moveRafId = 0; }
-          invoke('set_window_alpha', { label: detachedWindowLabel, alpha: 0 }).catch(() => {});
+          if (moveRafId) {
+            cancelAnimationFrame(moveRafId);
+            moveRafId = 0;
+          }
+          invoke("set_window_alpha", {
+            label: detachedWindowLabel,
+            alpha: 0,
+          }).catch(() => {});
         }
       } else {
         // Cursor is far from all targets — bring the window back to cursor position
         if (detachedWindowLabel && detachedWindowHidden) {
           detachedWindowHidden = false;
           // Restore opacity + move immediately so the window reappears without lag
-          invoke('set_window_alpha', { label: detachedWindowLabel, alpha: 1 }).catch(() => {});
-          invoke('move_window', {
+          invoke("set_window_alpha", {
+            label: detachedWindowLabel,
+            alpha: 1,
+          }).catch(() => {});
+          invoke("move_window", {
             label: detachedWindowLabel,
             x: e.screenX - dragOffsetX,
             y: e.screenY - dragOffsetY,
@@ -380,15 +494,17 @@
         if (moveRafId) cancelAnimationFrame(moveRafId);
         moveRafId = requestAnimationFrame(() => {
           moveRafId = 0;
-          invoke('move_window', { label: moveLabel, x: moveX, y: moveY }).catch(() => {});
+          invoke("move_window", { label: moveLabel, x: moveX, y: moveY }).catch(
+            () => {},
+          );
         });
       }
     }
 
     async function onUp() {
       el.releasePointerCapture(pointerId);
-      el.removeEventListener('pointermove', onMove);
-      el.removeEventListener('pointerup', onUp);
+      el.removeEventListener("pointermove", onMove);
+      el.removeEventListener("pointerup", onUp);
 
       // Snapshot all state into locals before any async work.
       // A new drag could start while we're awaiting, resetting component-level vars.
@@ -404,8 +520,11 @@
       const savedSingleTabHidden = singleTabHidden;
 
       // Reset drag state immediately so a new drag can start cleanly
-      document.body.style.cursor = '';
-      if (moveRafId) { cancelAnimationFrame(moveRafId); moveRafId = 0; }
+      document.body.style.cursor = "";
+      if (moveRafId) {
+        cancelAnimationFrame(moveRafId);
+        moveRafId = 0;
+      }
       dragTabIndex = null;
       dropTargetIndex = null;
       isDetaching = false;
@@ -420,17 +539,24 @@
 
       // Restore single-tab window opacity if it was hidden
       if (savedSingleTabHidden && appWindow) {
-        invoke('set_window_alpha', { label: appWindow.label, alpha: 1 }).catch(() => {});
+        invoke("set_window_alpha", { label: appWindow.label, alpha: 1 }).catch(
+          () => {},
+        );
       }
 
       if (savedIsDragging && savedDragTabIndex !== null) {
         if (savedDetachTriggered) {
           // Ensure we have the detached window label (IPC might still be in flight)
-          const finalLabel = savedDetachedWindowLabel ??
-            (savedDetachPromise ? (await savedDetachPromise.catch(() => undefined)) ?? null : null);
+          const finalLabel =
+            savedDetachedWindowLabel ??
+            (savedDetachPromise
+              ? ((await savedDetachPromise.catch(() => undefined)) ?? null)
+              : null);
           // If detached window is invisible but no target: restore it at cursor position
           if (savedDetachedWindowHidden && finalLabel && !savedCrossTarget) {
-            invoke('set_window_alpha', { label: finalLabel, alpha: 1 }).catch(() => {});
+            invoke("set_window_alpha", { label: finalLabel, alpha: 1 }).catch(
+              () => {},
+            );
           }
           // Multi-tab detach finalize: remove source tab; if over target, re-attach instead.
           // Await to ensure tab store operations complete before the next drag can start.
@@ -438,7 +564,10 @@
         } else if (savedCrossTarget) {
           // Single-tab or pre-detach attach
           await onAttachTab(savedDragTabIndex, savedCrossTarget);
-        } else if (savedDropTargetIndex !== null && savedDragTabIndex !== savedDropTargetIndex) {
+        } else if (
+          savedDropTargetIndex !== null &&
+          savedDragTabIndex !== savedDropTargetIndex
+        ) {
           onReorderTabs(savedDragTabIndex, savedDropTargetIndex);
         }
       }
@@ -447,14 +576,14 @@
       if (savedIsDragging && savedCachedBounds.length > 0) {
         for (const [label] of savedCachedBounds) {
           if (label !== myLabel && label !== savedCrossTarget) {
-            emitTo(label, 'tab-drag-end', {}).catch(() => {});
+            emitTo(label, "tab-drag-end", {}).catch(() => {});
           }
         }
       }
     }
 
-    el.addEventListener('pointermove', onMove);
-    el.addEventListener('pointerup', onUp);
+    el.addEventListener("pointermove", onMove);
+    el.addEventListener("pointerup", onUp);
   }
 
   // Right-click context menu state
@@ -464,7 +593,7 @@
 
   function handleContextMenu(event: MouseEvent) {
     if (!isMacOS) return;
-    if ((event.target as HTMLElement).closest('.tab-item')) return;
+    if ((event.target as HTMLElement).closest(".tab-item")) return;
     event.preventDefault();
     contextMenuX = event.clientX;
     contextMenuY = event.clientY;
@@ -473,12 +602,12 @@
     // Close on next click anywhere
     function closeMenu() {
       showContextMenu = false;
-      document.removeEventListener('click', closeMenu, true);
-      document.removeEventListener('contextmenu', closeMenu, true);
+      document.removeEventListener("click", closeMenu, true);
+      document.removeEventListener("contextmenu", closeMenu, true);
     }
     requestAnimationFrame(() => {
-      document.addEventListener('click', closeMenu, true);
-      document.addEventListener('contextmenu', closeMenu, true);
+      document.addEventListener("click", closeMenu, true);
+      document.addEventListener("contextmenu", closeMenu, true);
     });
   }
 
@@ -489,7 +618,7 @@
   // handles the visible filename. On other platforms, sync normally.
   $effect(() => {
     if (isMacOS) {
-      appWindow?.setTitle('');
+      appWindow?.setTitle("");
     } else {
       appWindow?.setTitle(displayTitle);
     }
@@ -508,12 +637,17 @@
   function updateScrollState() {
     if (!macScrollEl) return;
     canScrollLeft = macScrollEl.scrollLeft > 1;
-    canScrollRight = macScrollEl.scrollLeft < macScrollEl.scrollWidth - macScrollEl.clientWidth - 1;
+    canScrollRight =
+      macScrollEl.scrollLeft <
+      macScrollEl.scrollWidth - macScrollEl.clientWidth - 1;
   }
 
-  function scrollTabs(dir: 'left' | 'right') {
+  function scrollTabs(dir: "left" | "right") {
     if (!macScrollEl) return;
-    macScrollEl.scrollBy({ left: dir === 'left' ? -200 : 200, behavior: 'smooth' });
+    macScrollEl.scrollBy({
+      left: dir === "left" ? -200 : 200,
+      behavior: "smooth",
+    });
   }
 
   $effect(() => {
@@ -526,9 +660,15 @@
     void activeTabId;
     requestAnimationFrame(() => {
       if (!macScrollEl) return;
-      const activeEl = macScrollEl.querySelector('.tab-item.active') as HTMLElement | null;
+      const activeEl = macScrollEl.querySelector(
+        ".tab-item.active",
+      ) as HTMLElement | null;
       if (activeEl) {
-        activeEl.scrollIntoView({ block: 'nearest', inline: 'nearest', behavior: 'smooth' });
+        activeEl.scrollIntoView({
+          block: "nearest",
+          inline: "nearest",
+          behavior: "smooth",
+        });
         requestAnimationFrame(updateScrollState);
       }
     });
@@ -536,9 +676,13 @@
 </script>
 
 <!-- svelte-ignore a11y_no_static_element_interactions -->
-<div class="titlebar no-select" data-tauri-drag-region
-  onmousedown={handleDragStart} ondblclick={handleDblClick}
-  oncontextmenu={handleContextMenu}>
+<div
+  class="titlebar no-select"
+  data-tauri-drag-region
+  onmousedown={handleDragStart}
+  ondblclick={handleDblClick}
+  oncontextmenu={handleContextMenu}
+>
   <div class="titlebar-left">
     <span class="app-name" data-tauri-drag-region>Moraya</span>
   </div>
@@ -547,29 +691,53 @@
     {#if showInlineTabs}
       <!-- macOS: tabs embedded in 28px overlay -->
       {#if canScrollLeft}
-        <button class="scroll-arrow scroll-left" onclick={() => scrollTabs('left')}>
-          <svg width="6" height="8" viewBox="0 0 6 8"><path fill="currentColor" d="M5 0L0 4l5 4z"/></svg>
+        <button
+          class="scroll-arrow scroll-left"
+          onclick={() => scrollTabs("left")}
+        >
+          <svg width="6" height="8" viewBox="0 0 6 8"
+            ><path fill="currentColor" d="M5 0L0 4l5 4z" /></svg
+          >
         </button>
       {/if}
-      <div class="mac-tabs-scroll" bind:this={macScrollEl} onscroll={updateScrollState}>
+      <div
+        class="mac-tabs-scroll"
+        bind:this={macScrollEl}
+        onscroll={updateScrollState}
+      >
         {#each tabs as tab, index (tab.id)}
           {#if externalDropIndex === index}
             <div class="external-drop-indicator"></div>
           {/if}
           <!-- svelte-ignore a11y_consider_explicit_label -->
-          <button class="tab-item" class:active={tab.id === activeTabId}
-            class:drag-over={dropTargetIndex === index && dragTabIndex !== index}
+          <button
+            class="tab-item"
+            class:active={tab.id === activeTabId}
+            class:drag-over={dropTargetIndex === index &&
+              dragTabIndex !== index}
             class:dragging={dragTabIndex === index}
             class:detaching={isDetaching && dragTabIndex === index}
-            onclick={() => { if (!isDragging) onSwitchTab(tab.id); }}
-            onauxclick={(e) => { if (e.button === 1) { e.preventDefault(); handleTabClose(e, tab); } }}
-            onpointerdown={(e) => handleTabPointerDown(e, index)}>
+            onclick={() => {
+              if (!isDragging) onSwitchTab(tab.id);
+            }}
+            onauxclick={(e) => {
+              if (e.button === 1) {
+                e.preventDefault();
+                handleTabClose(e, tab);
+              }
+            }}
+            onpointerdown={(e) => handleTabPointerDown(e, index)}
+          >
             <span class="tab-name">
               {#if tab.isDirty}<span class="dirty-dot"></span>{/if}
               {tab.fileName}
             </span>
-            <span class="tab-close" role="button" tabindex="-1"
-              onclick={(e) => handleTabClose(e, tab)}>×</span>
+            <span
+              class="tab-close"
+              role="button"
+              tabindex="-1"
+              onclick={(e) => handleTabClose(e, tab)}>×</span
+            >
           </button>
         {/each}
         {#if externalDropIndex >= tabs.length}
@@ -577,8 +745,13 @@
         {/if}
       </div>
       {#if canScrollRight}
-        <button class="scroll-arrow scroll-right" onclick={() => scrollTabs('right')}>
-          <svg width="6" height="8" viewBox="0 0 6 8"><path fill="currentColor" d="M0 0l6 4-6 4z"/></svg>
+        <button
+          class="scroll-arrow scroll-right"
+          onclick={() => scrollTabs("right")}
+        >
+          <svg width="6" height="8" viewBox="0 0 6 8"
+            ><path fill="currentColor" d="M0 0l6 4-6 4z" /></svg
+          >
         </button>
       {/if}
     {:else}
@@ -587,25 +760,52 @@
   </div>
 
   <div class="titlebar-right">
-    <button class="titlebar-btn" onclick={handleMinimize} title={$t('titlebar.minimize')}>
+    <button
+      class="titlebar-btn"
+      onclick={handleMinimize}
+      title={$t("titlebar.minimize")}
+    >
       <svg width="10" height="1" viewBox="0 0 10 1">
-        <rect fill="currentColor" width="10" height="1"/>
+        <rect fill="currentColor" width="10" height="1" />
       </svg>
     </button>
-    <button class="titlebar-btn" onclick={handleMaximize} title={$t('titlebar.maximize')}>
+    <button
+      class="titlebar-btn"
+      onclick={handleMaximize}
+      title={$t("titlebar.maximize")}
+    >
       {#if isMaximized}
         <svg width="10" height="10" viewBox="0 0 10 10">
-          <path fill="currentColor" d="M2 0h6v2H2zM0 2h8v8H0zM1 3h6v6H1z" fill-rule="evenodd"/>
+          <path
+            fill="currentColor"
+            d="M2 0h6v2H2zM0 2h8v8H0zM1 3h6v6H1z"
+            fill-rule="evenodd"
+          />
         </svg>
       {:else}
         <svg width="10" height="10" viewBox="0 0 10 10">
-          <rect stroke="currentColor" fill="none" x="0.5" y="0.5" width="9" height="9" rx="0.5"/>
+          <rect
+            stroke="currentColor"
+            fill="none"
+            x="0.5"
+            y="0.5"
+            width="9"
+            height="9"
+            rx="0.5"
+          />
         </svg>
       {/if}
     </button>
-    <button class="titlebar-btn close" onclick={handleClose} title={$t('titlebar.close')}>
+    <button
+      class="titlebar-btn close"
+      onclick={handleClose}
+      title={$t("titlebar.close")}
+    >
       <svg width="10" height="10" viewBox="0 0 10 10">
-        <path fill="currentColor" d="M1 0L0 1l4 4-4 4 1 1 4-4 4 4 1-1-4-4 4-4-1-1-4 4z"/>
+        <path
+          fill="currentColor"
+          d="M1 0L0 1l4 4-4 4 1 1 4-4 4 4 1-1-4-4 4-4-1-1-4 4z"
+        />
       </svg>
     </button>
   </div>
@@ -613,12 +813,27 @@
 
 {#if showContextMenu}
   <!-- svelte-ignore a11y_no_static_element_interactions -->
-  <div class="titlebar-context-menu" style="left: {contextMenuX}px; top: {contextMenuY}px">
-    <button class="context-menu-item" onclick={() => { showContextMenu = false; onNewFile(); }}>
-      {$t('titlebar.newFile')}
+  <div
+    class="titlebar-context-menu"
+    style="left: {contextMenuX}px; top: {contextMenuY}px"
+  >
+    <button
+      class="context-menu-item"
+      onclick={() => {
+        showContextMenu = false;
+        onNewFile();
+      }}
+    >
+      {$t("titlebar.newFile")}
     </button>
-    <button class="context-menu-item" onclick={() => { showContextMenu = false; onOpenFile(); }}>
-      {$t('titlebar.openFile')}
+    <button
+      class="context-menu-item"
+      onclick={() => {
+        showContextMenu = false;
+        onOpenFile();
+      }}
+    >
+      {$t("titlebar.openFile")}
     </button>
   </div>
 {/if}
@@ -680,7 +895,9 @@
     background: transparent;
     color: var(--text-secondary);
     cursor: pointer;
-    transition: background var(--transition-fast), color var(--transition-fast);
+    transition:
+      background var(--transition-fast),
+      color var(--transition-fast);
   }
 
   .titlebar-btn:hover {
@@ -742,7 +959,9 @@
     cursor: pointer;
     border-bottom: 2px solid transparent;
     -webkit-app-region: no-drag;
-    transition: background var(--transition-fast), color var(--transition-fast);
+    transition:
+      background var(--transition-fast),
+      color var(--transition-fast);
   }
   .tab-item:hover {
     background: var(--bg-hover);
@@ -807,7 +1026,9 @@
     flex-shrink: 0;
     opacity: 0;
     pointer-events: none;
-    transition: opacity 0.15s, background var(--transition-fast);
+    transition:
+      opacity 0.15s,
+      background var(--transition-fast);
   }
   .tab-item.active .tab-close {
     opacity: 1;
@@ -844,7 +1065,10 @@
   }
 
   :global(.platform-macos) .titlebar-center {
-    padding-left: max(78px, var(--sidebar-visible-width, 0px)); /* traffic lights or sidebar (whichever is wider) */
+    padding-left: max(
+      78px,
+      var(--sidebar-visible-width, 0px)
+    ); /* traffic lights or sidebar (whichever is wider) */
     padding-right: var(--ai-panel-width, 0px); /* AI panel offset */
   }
 
